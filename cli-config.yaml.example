@@ -6,7 +6,7 @@
 # Model Configuration
 # =============================================================================
 model:
-  default: "meta/llama-3.1-8b-instruct"
+  default: "meta/llama-3.1-70b-instruct"
   
   # Inference provider selection:
   #   "auto"         - Auto-detect from credentials (default)
@@ -60,7 +60,8 @@ model:
   #   Set manually only when auto-detection is wrong (e.g. a local server with
   #   a custom num_ctx, or a proxy that doesn't expose /v1/models).
   #
-  # context_length: 131072
+  #
+  context_length: 131072
   #
   # max_tokens: OUTPUT cap — maximum tokens the model may generate per response.
   #   Unrelated to how long your conversation history can be.
