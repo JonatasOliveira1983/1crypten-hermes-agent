@@ -6,7 +6,7 @@
 # Model Configuration
 # =============================================================================
 model:
-  default: "meta/llama-3.1-70b-instruct"
+  default: "meta/llama-3.3-70b-instruct"
   
   # Inference provider selection:
   #   "auto"         - Auto-detect from credentials (default)
