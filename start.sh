@@ -3,6 +3,7 @@ source /opt/hermes/.venv/bin/activate
 
 echo "Iniciando o 1Crypten Guardian Agent (Telegram Gateway)..."
 # Inicia o bot no Telegram em background (usando a Doutrina Knife-Drop/Elite)
+export HERMES_ALLOW_ROOT_GATEWAY=1
 hermes gateway &
 
 echo "Iniciando o Dashboard (Kanban ADM)..."
