@@ -1,4 +1,5 @@
 #!/bin/bash
+source /opt/hermes/.venv/bin/activate
 
 echo "Iniciando o 1Crypten Guardian Agent (Telegram Gateway)..."
 # Inicia o bot no Telegram em background (usando a Doutrina Knife-Drop/Elite)
