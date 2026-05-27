@@ -83,10 +83,36 @@ if [ ! -f "$HERMES_HOME/config.yaml" ]; then
     cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
 fi
 
-# SOUL.md
-if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
-    cp "$INSTALL_DIR/docker/SOUL.md" "$HERMES_HOME/SOUL.md"
+# SOUL.md (Força o GUARDIAN_PROMPT.md como alma padrão)
+if [ -f "$INSTALL_DIR/GUARDIAN_PROMPT.md" ]; then
+    echo "Forçando GUARDIAN_PROMPT.md como SOUL.md..."
+    cp "$INSTALL_DIR/GUARDIAN_PROMPT.md" "$HERMES_HOME/SOUL.md"
+else
+    if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
+        cp "$INSTALL_DIR/docker/SOUL.md" "$HERMES_HOME/SOUL.md"
+    fi
 fi
+
+# USER.md (Força as preferências personalizadas do Jonatas e o conceito do 1Crypten)
+echo "Forçando USER.md do Jonatas e 1Crypten..."
+cat << 'EOF' > "$HERMES_HOME/USER.md"
+# Perfil do Usuário (Jonatas)
+
+## Nome e Comunicação
+- O nome do usuário é **Jonatas** (Jhon Oliver).
+- Você deve falar com ele estritamente em **Português do Brasil** (pt-br).
+- Use um tom de voz cirúrgico, técnico, direto e de elite.
+
+## Repositório e Sistema do 1Crypten
+- O repositório oficial do sistema 1Crypten é: https://github.com/JonatasOliveira1983/1C-7.0/commits/main/
+- Você atua como o **Agente Guardião do 1Crypten**, protegendo o capital institucional da OKX.
+- O sistema opera 4 slots ativos (frota de 40 pares altcoins Elite mais eixos BTC e ETH).
+
+## Doutrina e Diretrizes
+- Knife-Drop (O Facão): monitorar ROI consolidado. Ativa em 70% de ROI. Fechamento concorrente imediato em drawdown de 15% a partir do pico alcançado.
+- Blitz: emancipação de Moonbags em 150% de ROI.
+- use o comando `/banca` para auditar a banca e os slots operacionais lidos em tempo real do banco de dados PostgreSQL.
+EOF
 
 # auth.json: bootstrap from env on first boot only.  Used by orchestrators
 # (e.g. provisioning a Hermes VPS from an account-management service) that
