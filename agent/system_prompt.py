@@ -26,6 +26,8 @@ from __future__ import annotations
 import json
 import os
 from typing import Any, Dict, List, Optional
+from pathlib import Path
+from hermes_constants import get_hermes_home
 
 from agent.prompt_builder import (
     DEFAULT_AGENT_IDENTITY,
@@ -86,18 +88,22 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     # Try SOUL.md as primary identity unless the caller explicitly skipped it.
     # Some execution modes (cron) still want HERMES_HOME persona while keeping
     # cwd project instructions disabled.
+    _is_guardian = False
     _soul_loaded = False
     _soul_content = _r.load_soul_md()
     if _soul_content:
         stable_parts.append(_soul_content)
         _soul_loaded = True
+        if "1Crypten" in _soul_content or "1CrypTen" in _soul_content:
+            _is_guardian = True
 
     if not _soul_loaded:
         # Fallback to hardcoded identity
         stable_parts.append(DEFAULT_AGENT_IDENTITY)
 
-    # Pointer to the hermes-agent skill + docs for user questions about Hermes itself.
-    stable_parts.append(HERMES_AGENT_HELP_GUIDANCE)
+    if not _is_guardian:
+        # Pointer to the hermes-agent skill + docs for user questions about Hermes itself.
+        stable_parts.append(HERMES_AGENT_HELP_GUIDANCE)
 
     # Tool-aware behavioral guidance: only inject when the tools are loaded
     tool_guidance = []
@@ -126,9 +132,10 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
         from agent.prompt_builder import COMPUTER_USE_GUIDANCE
         stable_parts.append(COMPUTER_USE_GUIDANCE)
 
-    nous_subscription_prompt = _r.build_nous_subscription_prompt(agent.valid_tool_names)
-    if nous_subscription_prompt:
-        stable_parts.append(nous_subscription_prompt)
+    if not _is_guardian:
+        nous_subscription_prompt = _r.build_nous_subscription_prompt(agent.valid_tool_names)
+        if nous_subscription_prompt:
+            stable_parts.append(nous_subscription_prompt)
     # Tool-use enforcement: tells the model to actually call tools instead
     # of describing intended actions.  Controlled by config.yaml
     # agent.tool_use_enforcement:
@@ -278,11 +285,22 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
             mem_block = agent._memory_store.format_for_system_prompt("memory")
             if mem_block:
                 volatile_parts.append(mem_block)
-        # USER.md is always included when enabled.
+        # USER.md is always included when available (forced for custom profiles)
+        user_block = None
         if agent._user_profile_enabled:
             user_block = agent._memory_store.format_for_system_prompt("user")
-            if user_block:
-                volatile_parts.append(user_block)
+        if not user_block:
+            # Fallback to direct reading of USER.md in home directory
+            user_path = get_hermes_home() / "USER.md"
+            if user_path.exists():
+                try:
+                    user_content = user_path.read_text(encoding="utf-8").strip()
+                    if user_content:
+                        user_block = f"# User Profile\n\n{user_content}"
+                except Exception:
+                    pass
+        if user_block:
+            volatile_parts.append(user_block)
 
     # External memory provider system prompt block (additive to built-in)
     if agent._memory_manager:
