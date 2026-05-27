@@ -48,7 +48,8 @@ COPY --chown=hermes:hermes . .
 RUN uv pip install --python /opt/hermes/.venv/bin/python --no-deps -e .
 
 # Permissões
-RUN chown -R hermes:hermes /opt/hermes/.venv /opt/data
+RUN mkdir -p /opt/hermes/node_modules && \
+    chown -R hermes:hermes /opt/hermes/.venv /opt/hermes/ui-tui /opt/hermes/node_modules /opt/data
 
 EXPOSE 8080
 
