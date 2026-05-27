@@ -7351,6 +7351,9 @@ class GatewayRunner:
         if canonical == "compress":
             return await self._handle_compress_command(event)
 
+        if canonical == "banca":
+            return await self._handle_banca_command(event)
+
         if canonical == "usage":
             return await self._handle_usage_command(event)
 
@@ -9527,6 +9530,85 @@ class GatewayRunner:
             logger.debug("build_recap failed in /status: %s", exc)
 
         return "\n".join(lines)
+
+    async def _handle_banca_command(self, event: MessageEvent) -> str:
+        """Handle /banca command to display status from PostgreSQL in Portuguese."""
+        import os
+        from sqlalchemy import text
+        from sqlalchemy.ext.asyncio import create_async_engine
+
+        db_url = os.getenv("DATABASE_URL")
+        if not db_url:
+            db_url = "postgresql+asyncpg://postgres:JSLsEfBVPywKuYJSAypuNPVvIgYwGXzz@centerbeam.proxy.rlwy.net:54059/railway"
+
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif db_url.startswith("postgresql://"):
+            db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        engine = create_async_engine(db_url, echo=False)
+        try:
+            async with engine.connect() as conn:
+                # 1. Obter Banca
+                banca_result = await conn.execute(text("SELECT saldo_total, slots_disponiveis, status FROM banca_status WHERE id = 1"))
+                banca_row = banca_result.fetchone()
+
+                # 2. Obter Slots
+                slots_result = await conn.execute(text("SELECT id, symbol, side, qty, entry_price, status_risco, slot_type, order_id FROM slots ORDER BY id"))
+                slots_rows = slots_result.fetchall()
+
+                # Montar o relatório visual
+                lines = [
+                    "🛡️ **1CRYPTEN GUARDIAN — RELATÓRIO OPERACIONAL**",
+                    "",
+                ]
+
+                if banca_row:
+                    saldo, disponiveis, status = banca_row
+                    status_emoji = "🟢" if "ATIVO" in str(status).upper() or "OPERANDO" in str(status).upper() else "🟡"
+                    lines.extend([
+                        "💰 **Consolidado da Banca:**",
+                        f"• Saldo Total: `${saldo:,.2f}`",
+                        f"• Slots Disponíveis: `{disponiveis} / 4`",
+                        f"• Status Geral: {status_emoji} `{status}`",
+                        "",
+                    ])
+                else:
+                    lines.extend([
+                        "❌ **Aviso:** Registro de banca_status não encontrado (id=1).",
+                        "",
+                    ])
+
+                lines.append("⚡ **Slots Operacionais (Elite Fleet):**")
+                
+                active_slots = []
+                for s in slots_rows:
+                    slot_id, symbol, side, qty, entry_price, status_risco, slot_type, order_id = s
+                    # Consideramos ativo se houver um símbolo definido e não for nulo/livre/vazio
+                    is_active = symbol and str(symbol).strip().upper() not in ["LIVRE", "NONE", "NULL", ""]
+                    if is_active:
+                        side_emoji = "🟢 LONG" if "LONG" in str(side).upper() else "🔴 SHORT"
+                        active_slots.append(
+                            f"**Slot {slot_id}:** {side_emoji} **{symbol}**\n"
+                            f"  • Estratégia: `{slot_type or 'BLITZ'}`\n"
+                            f"  • Entrada: `${entry_price or 0:,.6f}`\n"
+                            f"  • Quantidade: `{qty}`\n"
+                            f"  • Risco: `{status_risco}`\n"
+                            f"  • ID da Ordem: `{order_id}`"
+                        )
+
+                if active_slots:
+                    lines.extend(active_slots)
+                else:
+                    lines.append("• Todos os slots estão livres e prontos para novos sinais do Observatory.")
+
+                return "\n".join(lines)
+
+        except Exception as e:
+            logger.error("Erro ao consultar o banco de dados no comando /banca: %s", e)
+            return f"❌ **Erro de Conexão:** Não foi possível consultar a banca no momento. Detalhes: `{e}`"
+        finally:
+            await engine.dispose()
 
     async def _handle_agents_command(self, event: MessageEvent) -> str:
         """Handle /agents command - list active agents and running tasks."""

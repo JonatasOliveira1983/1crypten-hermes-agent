@@ -1311,12 +1311,26 @@ def _truncate_content(content: str, filename: str, max_chars: int = CONTEXT_FILE
 
 
 def load_soul_md() -> Optional[str]:
-    """Load SOUL.md from HERMES_HOME and return its content, or None.
+    """Load SOUL.md or GUARDIAN_PROMPT.md and return its content, or None.
 
     Used as the agent identity (slot #1 in the system prompt).  When this
     returns content, ``build_context_files_prompt`` should be called with
-    ``skip_soul=True`` so SOUL.md isn't injected twice.
+    ``skip_soul=True`` so SOUL.md/GUARDIAN_PROMPT.md isn't injected twice.
     """
+    # 1. Try to load GUARDIAN_PROMPT.md or SOUL.md from the root directory of the running app first
+    for name in ["GUARDIAN_PROMPT.md", "SOUL.md"]:
+        candidate_path = Path(name)
+        if candidate_path.exists():
+            try:
+                content = candidate_path.read_text(encoding="utf-8").strip()
+                if content:
+                    content = _scan_context_content(content, name)
+                    content = _truncate_content(content, name)
+                    return content
+            except Exception as e:
+                logger.debug("Could not read %s from current directory: %s", name, e)
+
+    # 2. Fallback to default HERMES_HOME/SOUL.md behavior
     try:
         from hermes_cli.config import ensure_hermes_home
         ensure_hermes_home()
