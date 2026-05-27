@@ -3,6 +3,10 @@
 
 ## 🚀 ROADMAP DE VERSÕES & MARCOS TÉCNICOS
 
+*   **V110.701: PAPER MODE AMNESIA FIX & SILENT DROP TELEMETRY [MAY 27]**
+    - **Paper Mode Amnesia Guard Fix**: Correção no `okx_rest.py` para impedir que o modo simulado (PAPER) "adote" ordens fantasmas ou reais persistidas no Vault (`firestore_slots`), o que anteriormente causava o travamento dos slots (falso positivo de "SNIPER FULL"). O estado do Paper agora é estritamente isolado e lido do `paper_state`.
+    - **Silent Drop Telemetry**: Injeção de log de depuração em `signal_generator.py` para alertar (`[SCORE-DROP]`) quando um sinal entra em queda livre na validação final (ex: de 99 para 59) e cai abaixo do `anticipation_min` (60), evitando que o sistema descarte a oportunidade de forma silenciosa e invisível aos logs de operação.
+
 *   **V110.700: INTEGRATION SAAS V5.5.0 & OKX PORTFOLIO GUARDIAN [MAY 22]**
     - **OKX Suite Migration**: Transição completa da conta Master da Bybit para o **OKX (Portfolio Margin Mode)**. Conexão WebSocket privada resiliente em `okx_ws.py` com watchdog de silêncio de 45s e autenticação HMAC-SHA256 robusta no `okx_service.py`.
     - **Portfolio Guardian & Knife-Drop**: Máquina de estados atômica unificada monitorando o ROI consolidado da conta Master. Ativação automática em 70% ROI, acompanhamento de pico e fechamento concorrente em lote ultra-rápido via `/api/v5/trade/batch-orders` (Algoritmo **Knife-Drop** / "O Facão") se houver recuo de 15% a partir do pico, emitindo sinal de pânico global.
