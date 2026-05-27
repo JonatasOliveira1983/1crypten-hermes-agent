@@ -74,6 +74,7 @@ fi
 # ────────────────────────────────────────────────────────
 # Iniciar o Gateway do Telegram (em background)
 # ────────────────────────────────────────────────────────
+export HERMES_GUARDIAN=1
 export HERMES_ALLOW_ROOT_GATEWAY=1
 echo "📡 Iniciando o 1Crypten Guardian Agent (Telegram Gateway)..."
 hermes gateway &

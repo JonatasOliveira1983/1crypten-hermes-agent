@@ -94,7 +94,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     if _soul_content:
         stable_parts.append(_soul_content)
         _soul_loaded = True
-        if "1Crypten" in _soul_content or "1CrypTen" in _soul_content:
+        if ("1Crypten" in _soul_content or "1CrypTen" in _soul_content) and os.getenv("HERMES_GUARDIAN") == "1":
             _is_guardian = True
 
     if not _soul_loaded:
@@ -289,7 +289,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
         user_block = None
         if agent._user_profile_enabled:
             user_block = agent._memory_store.format_for_system_prompt("user")
-        if not user_block:
+        if not user_block and os.getenv("HERMES_GUARDIAN") == "1":
             # Fallback to direct reading of USER.md in home directory
             user_path = get_hermes_home() / "USER.md"
             if user_path.exists():

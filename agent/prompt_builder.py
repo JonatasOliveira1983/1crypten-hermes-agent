@@ -1319,19 +1319,20 @@ def load_soul_md() -> Optional[str]:
     """
     # 1. Try to load GUARDIAN_PROMPT.md or SOUL.md from the root directory of the running app first
     # Check both relative path and absolute parent path of current file (repo root)
-    repo_root = Path(__file__).resolve().parent.parent
-    for name in ["GUARDIAN_PROMPT.md", "SOUL.md"]:
-        for base_dir in [Path("."), repo_root]:
-            candidate_path = base_dir / name
-            if candidate_path.exists():
-                try:
-                    content = candidate_path.read_text(encoding="utf-8").strip()
-                    if content:
-                        content = _scan_context_content(content, name)
-                        content = _truncate_content(content, name)
-                        return content
-                except Exception as e:
-                    logger.debug("Could not read %s from %s: %s", name, base_dir, e)
+    if os.getenv("HERMES_GUARDIAN") == "1":
+        repo_root = Path(__file__).resolve().parent.parent
+        for name in ["GUARDIAN_PROMPT.md", "SOUL.md"]:
+            for base_dir in [Path("."), repo_root]:
+                candidate_path = base_dir / name
+                if candidate_path.exists():
+                    try:
+                        content = candidate_path.read_text(encoding="utf-8").strip()
+                        if content:
+                            content = _scan_context_content(content, name)
+                            content = _truncate_content(content, name)
+                            return content
+                    except Exception as e:
+                        logger.debug("Could not read %s from %s: %s", name, base_dir, e)
 
     # 2. Fallback to default HERMES_HOME/SOUL.md behavior
     try:
