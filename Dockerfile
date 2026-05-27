@@ -1,52 +1,68 @@
-# ===========================
-# 1CRYPTEN GUARDIAN — Dockerfile
-# Gateway-only build (sem Node.js/Playwright desnecessários)
-# ===========================
+# ============================================================
+# 1CRYPTEN GUARDIAN — Dockerfile (Build Definitivo)
+# Usa pip puro — sem uv sync --frozen, sem Node.js, sem Playwright
+# ============================================================
 
-FROM ghcr.io/astral-sh/uv:0.11.6-python3.13-trixie@sha256:b3c543b6c4f23a5f2df22866bd7857e5d304b67a564f4feab6ac22044dde719b AS uv_source
-FROM tianon/gosu:1.19-trixie@sha256:3b176695959c71e123eb390d427efc665eeb561b1540e82679c15e992006b8b9 AS gosu_source
-FROM debian:trixie-slim
+FROM python:3.13-slim
 
-# Sem buffer Python para logs imediatos
 ENV PYTHONUNBUFFERED=1
-ENV HERMES_WEB_DIST=/opt/hermes/hermes_cli/web_dist
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV HERMES_HOME=/opt/data
+ENV HERMES_WEB_DIST=/opt/hermes/hermes_cli/web_dist
 ENV PATH="/opt/data/.local/bin:${PATH}"
 
-# Dependências do sistema — apenas o necessário para o gateway
+# Dependências de sistema
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential gcc python3-dev libffi-dev \
-        curl procps git tini gosu && \
+        libpq-dev curl procps git ripgrep tini gosu && \
     rm -rf /var/lib/apt/lists/*
 
 # Usuário não-root
 RUN useradd -u 10000 -m -d /opt/data hermes
 
-# Copiar binários auxiliares
-COPY --chmod=0755 --from=gosu_source /gosu /usr/local/bin/
-COPY --chmod=0755 --from=uv_source /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
-
 WORKDIR /opt/hermes
 
-# ---------- Instalar dependências Python (camada cacheada) ----------
-COPY pyproject.toml uv.lock ./
+# ---------- Dependências Python (camada cacheada) ----------
+# Copiar apenas o pyproject.toml primeiro para cache eficiente
+COPY pyproject.toml ./
 RUN touch ./README.md
-RUN uv sync --frozen --no-install-project --extra messaging
+
+# Instalar dependências core + messaging via pip (sem uv.lock)
+RUN pip install --no-cache-dir \
+    openai==2.24.0 \
+    python-dotenv==1.2.2 \
+    fire==0.7.1 \
+    "httpx[socks]==0.28.1" \
+    rich==14.3.3 \
+    tenacity==9.1.4 \
+    pyyaml==6.0.3 \
+    "ruamel.yaml==0.18.17" \
+    requests==2.33.0 \
+    "jinja2==3.1.6" \
+    pydantic==2.13.4 \
+    "prompt_toolkit==3.0.52" \
+    croniter==6.0.0 \
+    "PyJWT[crypto]==2.12.1" \
+    psutil==7.2.2 \
+    sqlalchemy==2.0.28 \
+    asyncpg==0.31.0 \
+    "python-telegram-bot[webhooks]==22.6" \
+    "aiohttp==3.13.3" \
+    tzdata
 
 # ---------- Código-fonte ----------
 COPY --chown=hermes:hermes . .
 
-# ---------- Permissões ----------
-USER root
-RUN chmod -R a+rX /opt/hermes && \
-    chown -R hermes:hermes /opt/hermes/.venv
-
 # ---------- Instalar o hermes-agent em modo editável ----------
-RUN uv pip install --no-cache-dir --no-deps -e "."
+RUN pip install --no-cache-dir --no-deps -e .
+
+# ---------- Permissões ----------
+RUN chmod -R a+rX /opt/hermes && \
+    chown -R hermes:hermes /opt/hermes
 
 # ---------- Diretório de dados ----------
-RUN mkdir -p /opt/data
+RUN mkdir -p /opt/data && chown hermes:hermes /opt/data
 
-ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh" ]
-CMD [ "gateway" ]
+ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh"]
+CMD ["gateway"]

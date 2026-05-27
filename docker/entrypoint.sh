@@ -59,7 +59,10 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 # --- Running as hermes from here ---
-source "${INSTALL_DIR}/.venv/bin/activate"
+# Ativar o venv se existir (instalação com uv), caso contrário usar Python do sistema (instalação com pip)
+if [ -f "${INSTALL_DIR}/.venv/bin/activate" ]; then
+    source "${INSTALL_DIR}/.venv/bin/activate"
+fi
 
 # Stamp install method for detect_install_method()
 echo "docker" > "${HERMES_HOME:=/opt/data}/.install_method" 2>/dev/null || true
