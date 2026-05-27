@@ -37,7 +37,7 @@ RUN touch ./README.md && \
         pyyaml==6.0.3 "ruamel.yaml==0.18.17" requests==2.33.0 \
         "jinja2==3.1.6" pydantic==2.13.4 "prompt_toolkit==3.0.52" \
         croniter==6.0.0 "PyJWT[crypto]==2.12.1" psutil==7.2.2 \
-        sqlalchemy==2.0.36 asyncpg==0.31.0 tzdata \
+        sqlalchemy==2.0.36 asyncpg==0.31.0 greenlet==3.1.1 tzdata \
         "python-telegram-bot==22.6" "aiohttp==3.13.3" \
         "fastapi==0.133.1" "uvicorn[standard]==0.41.0"
 
