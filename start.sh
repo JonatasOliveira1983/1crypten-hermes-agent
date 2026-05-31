@@ -71,6 +71,13 @@ if [ -d "$INSTALL_DIR/skills" ] && [ -f "$INSTALL_DIR/tools/skills_sync.py" ]; t
     python3 "$INSTALL_DIR/tools/skills_sync.py" 2>/dev/null || true
 fi
 
+# Sincronização explícita e forçada da Skill do Guardião 1Crypten
+echo "🛸 Sincronizando Skill do Guardião 1Crypten no container..."
+mkdir -p "$HERMES_HOME/skills/productivity/1crypten-core-guardian/scripts"
+cp "$INSTALL_DIR/skills/productivity/1crypten-core-guardian/SKILL.md" "$HERMES_HOME/skills/productivity/1crypten-core-guardian/SKILL.md" || true
+cp -r "$INSTALL_DIR/skills/productivity/1crypten-core-guardian/scripts/"* "$HERMES_HOME/skills/productivity/1crypten-core-guardian/scripts/" || true
+echo "✅ Skill 1crypten-core-guardian sincronizada!"
+
 # ────────────────────────────────────────────────────────
 # Iniciar o Gateway do Telegram (em background)
 # ────────────────────────────────────────────────────────
